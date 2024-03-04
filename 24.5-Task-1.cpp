@@ -50,21 +50,28 @@ int req_input()
 }
 
 //Функция начала отслеживания новой задачи
-std::string begin()
+std::time_t begin(std::string &taskName)
 {
+    //Ввод строки с запросом
+    std::cout << "Please enter a task name: ";
+    std::getline(std::cin, taskName);
 
+    std::time_t curTime=std::time(nullptr);
+    std::cout << curTime << " " << taskName << std::endl;
+    return curTime;
 }
 
 //Функция окончания отслеживания текущей задачи
-void end()
+void end(const std::time_t &tBegin, const std::string &taskName)
 {
-
+    std::cout << "OK" << std::endl;
+    std::cout << tBegin << " " << taskName << std::endl;
 }
 
 //Функция вывода на экран информации о всех законченных задачах и времени, которое было на них потрачено.
-void status()
+void status(const std::string &taskName)
 {
-
+    std::cout << "Current task: " << taskName << std::endl;
 }
 
 int main()
@@ -73,7 +80,8 @@ int main()
 
     int reqType = 0; //Переменная с кодом запроса
     std::string taskName; //Строка с именем задания
-    bool taskStart = false;
+    bool taskStart = false; //Флаг наличия текущей задачи
+    std::time_t tBegin;
 
     do
     {
@@ -82,17 +90,21 @@ int main()
         {
             if (taskStart)
             {
-                end();
+                end(tBegin,taskName);
                 taskStart = false;
             } 
-            taskName = begin();
+            tBegin = begin(taskName);
+            taskStart = true;
         } 
         if (reqType == 2 && taskStart) 
         {
-            end();
+            end(tBegin,taskName);
             taskStart = false;
         }
-        if (reqType == 3) status ();
+        if (reqType == 3) 
+        {
+            (taskStart)? status(taskName): status("NO TASKS");
+        }
     } while (reqType!=4);
     
     std::cout << std::endl << "Program completed. Press any key...";
