@@ -117,6 +117,8 @@ void end(const std::time_t &tBegin, const std::string &taskName)
 //Функция вывода на экран информации о всех законченных задачах и времени, которое было на них потрачено.
 void status(const std::string &taskName)
 {
+    
+    std::cout << "----------------------------" << std::endl;
     //Открытие файла
     std::ifstream file(FILE_NAME, std::ios::binary);
     if (!file.is_open())
@@ -125,8 +127,12 @@ void status(const std::string &taskName)
         return;
     }
     
+    //Заплатка для корректной работы чтения из файла
+    file.seekg(0, std::ios::end);
+    int fsize = file.tellg();
+    file.seekg(0);
     //Чтение и вывод информации из файла
-    while (!file.eof())
+    while (file.tellg()<fsize)
     {
         std::string name;
         int len, HH, MM, SS;
@@ -136,14 +142,18 @@ void status(const std::string &taskName)
         file.read((char*)&HH, sizeof(int));
         file.read((char*)&MM, sizeof(int));
         file.read((char*)&SS, sizeof(int));
-        std::cout << name << " " << HH << " hour " << MM << " min "<< SS << " sec " << std::boolalpha << file.eof() << " " << file.tellg() << std::endl;
+        std::cout << name << ":-> " << HH << " hour " << MM << " min "<< SS << " sec " << std::endl;
     }
     
-    //Закрытие файла
+    //Закрытие файла    
     file.close();
+    
+    std::cout << "----------------------------" << std::endl;
     
     //Вывод названия текущей задачи
     std::cout << "Current task: " << taskName << std::endl;
+    
+    std::cout << "----------------------------" << std::endl;
 }
 
 int main()
