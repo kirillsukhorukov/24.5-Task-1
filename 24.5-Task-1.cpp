@@ -1,6 +1,11 @@
 #include <iostream>
 #include <string>
 #include <ctime>
+#include <iostream>
+#include <fstream>
+
+//Имя файла для сохранения данных
+const std::string FILE_NAME = "TimeTracking.bin";
 
 //Функция вывода приветствия
 void hello()
@@ -11,6 +16,25 @@ std::cout << " - Enter 'end' to end tracking of the current task." << std::endl;
 std::cout << " - Enter 'status' to display completed tasks." << std::endl;
 std::cout << " - Enter 'exit' to exit the program." << std::endl << std::endl;
 return;
+}
+
+//Функция создания файла с данными
+void createFile()
+{
+    std::ifstream file(FILE_NAME, std::ios::binary);
+    if (!file.is_open())
+    {
+        std::ofstream file(FILE_NAME, std::ios::binary);
+        if (!file.is_open())
+        {
+            std::cerr << "Error create file\n";
+            exit(1);
+        }
+        file.close();
+    }
+    file.close();
+
+    return;
 }
 
 //Функция ввода запроса и определение его типа
@@ -55,28 +79,80 @@ std::time_t begin(std::string &taskName)
     //Ввод строки с запросом
     std::cout << "Please enter a task name: ";
     std::getline(std::cin, taskName);
-
+    //Взятие времени начала задачи
     std::time_t curTime=std::time(nullptr);
-    std::cout << curTime << " " << taskName << std::endl;
     return curTime;
 }
 
 //Функция окончания отслеживания текущей задачи
 void end(const std::time_t &tBegin, const std::string &taskName)
 {
-    std::cout << "OK" << std::endl;
-    std::cout << tBegin << " " << taskName << std::endl;
+    //Взятие времени окнчания задачи и определение разницы
+    std::time_t tEnd=std::time(nullptr);
+    double taskTime = difftime(tEnd, tBegin);
+
+    //Находим количество часов минут и секунд потраченных на задание
+    int HH = (int)taskTime/3600;
+    int MM = (int)(taskTime-HH*3600)/60;
+    int SS = taskTime-HH*3600-MM*60;
+
+    //Открытие файла для записи
+    std::ofstream file(FILE_NAME, std::ios::binary | std::ios::app);
+    if (!file.is_open())
+    {
+        std::cerr << "File " << FILE_NAME << " is not open!\n" << std::endl;
+        return;
+    }
+    //Запись в файл
+    int len = taskName.length();
+    file.write((char*)&len, sizeof(len));
+    file.write(taskName.c_str(), len);
+    file.write((char*)&HH, sizeof(int));
+    file.write((char*)&MM, sizeof(int));
+    file.write((char*)&SS, sizeof(int));
+    //Закрытие файла
+    file.close();
 }
 
 //Функция вывода на экран информации о всех законченных задачах и времени, которое было на них потрачено.
 void status(const std::string &taskName)
 {
+    //Открытие файла
+    std::ifstream file(FILE_NAME, std::ios::binary);
+    if (!file.is_open())
+    {
+        std::cerr << "File " << FILE_NAME << " is not open!\n" << std::endl;
+        return;
+    }
+    
+    //Чтение и вывод информации из файла
+    while (!file.eof())
+    {
+        std::string name;
+        int len, HH, MM, SS;
+        file.read((char*)&len, sizeof(int));
+        name.resize(len);
+        file.read((char*)name.c_str(), len);
+        file.read((char*)&HH, sizeof(int));
+        file.read((char*)&MM, sizeof(int));
+        file.read((char*)&SS, sizeof(int));
+        std::cout << name << " " << HH << " hour " << MM << " min "<< SS << " sec " << std::boolalpha << file.eof() << " " << file.tellg() << std::endl;
+    }
+    
+    //Закрытие файла
+    file.close();
+    
+    //Вывод названия текущей задачи
     std::cout << "Current task: " << taskName << std::endl;
 }
 
 int main()
 {
+    //Вывод приветствия
     hello();
+
+    //Создание или проверка наличия файла для сохранения данных
+    createFile();
 
     int reqType = 0; //Переменная с кодом запроса
     std::string taskName; //Строка с именем задания
@@ -103,7 +179,7 @@ int main()
         }
         if (reqType == 3) 
         {
-            (taskStart)? status(taskName): status("NO TASKS");
+            (taskStart)? status(taskName): status("- NO TASKS -");
         }
     } while (reqType!=4);
     
